@@ -1,0 +1,160 @@
+---
+output: html_document
+---
+<center> 
+# **EXERCISE EXECUTION QUALITY** 
+#### Alexis Semmama - 2018/09/24
+</center>
+
+---
+output: html_document
+---
+
+## **Background**
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways:  
+
+* Class A : Exactly according to the specification   
+* Class B : Throwing the elbows to the front   
+* Class C : Lifting the dumbbell only halfway  
+* Class D : Lowering the dumbbell only halfway 
+* Class E : Throwing the hips to the front   
+
+
+**Our goal is to predict the manner in which they did the exercise.**
+
+## **Loading the libraries and data**
+
+```{r message=FALSE}
+library(caret)
+library(randomForest)
+library(gbm)
+
+pml_training <- read.csv('pml-training.csv')
+pml_testing <- read.csv('pml-testing.csv')
+```
+## **Train and test sets**
+
+We create the training and testing sets we will work on by partitioning the training data set we got in the previous part.
+
+```{r}
+inTrain <- createDataPartition(y=pml_training$classe, p=0.7, list=FALSE)
+trainSet <- pml_training[inTrain,]
+testSet <- pml_training[-inTrain,]
+dim(trainSet)
+```
+
+We can see that we have 160 variables in the training set and we'll begin the analysis by reducing this number.
+
+## **Features Selection**
+
+#### **Delete NA variables**
+We first delete the variables that have nearly only NA values. We put the limit at 95% of NA values in the data.
+``` {r}
+isNearlyNA <- sapply(trainSet, function(x) mean(is.na(x)) > 0.95)
+trainSet <- trainSet[, isNearlyNA==FALSE]
+testSet <- testSet[, isNearlyNA==FALSE]
+```  
+
+#### **Delete variables with near zero variance**
+We now look at the variables with near zero variance. Those variables are likely not to alter the final modeln due to the fact that they are really close to each other.
+``` {r}
+nzv <- nearZeroVar(trainSet)
+trainSet <- trainSet[, -nzv]
+testSet <- testSet[, -nzv]
+```  
+
+#### **Delete user ids variables**
+The first 5 columns are only user identifications info that are not to be taken into account in the modeling process. We drop them.
+``` {r}
+trainSet <- trainSet[, -(1:5)]
+testSet <- testSet[, -(1:5)]
+```  
+    
+#### **Principal Components Analysis**
+```{r}
+dim(trainSet)
+```
+We now have 54 variableswhich is a lot smaller than what we began with. We can try to reduce them again by using the principal component analysis (PCA) which will allow us to combine predictors between them and explain most of the variability with much less variable.
+``` {r}
+preProc <- preProcess(trainSet[, -54], method="pca", thresh = 0.95)
+preProc
+```
+We see that with only 25 variables we capture 95% of the variance. PCA might be interesting to use in our models !
+
+## **Model Selection**
+
+We will test 2 models : Random Forests and GBM (boosting with trees). We will each time try to use the PCA prepocessing to see how it affects both accuracy and efficiency.  
+
+1. **Random Forest**
+
+```{r}
+set.seed(1234)
+controlRF <- trainControl(method = "cv", number = 3, verboseIter = FALSE)
+mod_rf <- train(classe~., method = "rf", data = trainSet, trControl = controlRF)
+pred_rf <- predict(mod_rf, testSet)
+accuracy_rf <- confusionMatrix(pred_rf, testSet$classe)$overall[1]
+paste("Accuracy of Random Forest : ", accuracy_rf)
+```
+
+We see that we have a great accuracy. The computational time was about 4 minutes wich is a little long for a small dataset of 13 000 observations, but acceptable given the fact we do not need to scale it to a larger set.  
+
+2. **Random Forest with PCA**
+
+```{r warning=FALSE}
+set.seed(1234)
+controlRF <- trainControl(method = "cv", number = 3, verboseIter = FALSE)
+mod_rf_pca <- train(classe~., method = "rf", data = trainSet, preProcess = "pca", trControl = controlRF)
+pred_rf_pca <- predict(mod_rf_pca, testSet)
+accuracy_rf_pca <- confusionMatrix(pred_rf_pca, testSet$classe)$overall[1]
+paste("Accuracy of Random Forest with PCA : ", accuracy_rf_pca)
+```  
+The accuracy is slightly reduced using PC and the execution time is nearly divided by 2. Thais could maybe be a more scalable solution. 
+
+3. **GBM Algorithm**
+``` {r}
+set.seed(1234)
+controlGBM <- trainControl(method = "repeatedcv", number = 5, repeats = 1)
+mod_gbm <- train(classe~., method = "gbm", data = trainSet, trControl = controlGBM, verbose = FALSE)
+pred_gbm <- predict(mod_gbm, testSet)
+accuracy_gbm <- confusionMatrix(pred_gbm, testSet$classe)$overall[1]
+paste("Accuracy of GBM with: ", accuracy_gbm)
+```  
+
+The accuracy is nearly as high as the random forest model and the execution time is similar. We will prefer the random forest model.  
+
+4. **GBM Algorithm with PCA**
+
+```{r}
+set.seed(1234)
+mod_gbm_pca <- train(classe~., method="gbm", data=trainSet, preProcess="pca", trControl=controlGBM, verbose=FALSE)
+pred_gbm_pca <- predict(mod_gbm_pca, testSet)
+accuracy_gbm_pca <- confusionMatrix(pred_gbm_pca, testSet$classe)$overall[1]
+paste("Accuracy of GBM with PCA: ", accuracy_gbm_pca)
+```  
+
+Again, the accuracy is greatly inferior the random forest model here with a not so much quicker solution.  
+
+#### **Conclusion**
+
+```{r}
+paste("Accuracy of Random Forest : ", accuracy_rf)
+paste("Accuracy of Random Forest with PCA : ", accuracy_rf_pca)
+paste("Accuracy of GBM : ", accuracy_gbm)
+paste("Accuracy of GBM with PCA: ", accuracy_gbm_pca)
+```
+
+The best model for accuracy is the simple random forest one with 99.7% of accuracy on the test set. 
+However, the execution time might forbid to use this algorithm on larger data sets. The Random Forest with PCA preprocessing appear as a more viable alternative for this case.
+
+## **Application to the test data**
+
+We have a small test set here, we will use the random forest model to predict the quality of the movements.
+
+```{r}
+prediction <- predict(mod_rf, newdata = pml_testing)
+print(prediction)
+```
+
+
+
