@@ -147,6 +147,8 @@ paste("Accuracy of GBM with PCA: ", accuracy_gbm_pca)
 The best model for accuracy is the simple random forest one with 99.7% of accuracy on the test set. 
 However, the execution time might forbid to use this algorithm on larger data sets. The Random Forest with PCA preprocessing appear as a more viable alternative for this case.
 
+Our out-of-sample error should be of 0.3%.
+
 ## **Application to the test data**
 
 We have a small test set here, we will use the random forest model to predict the quality of the movements.

@@ -202,7 +202,7 @@ preProc</code></pre>
 ##   - principal component signal extraction (53)
 ##   - scaled (53)
 ## 
-## PCA needed 25 components to capture 95 percent of the variance</code></pre>
+## PCA needed 27 components to capture 95 percent of the variance</code></pre>
 <p>We see that with only 25 variables we capture 95% of the variance. PCA might be interesting to use in our models !</p>
 </div>
 </div>
@@ -218,7 +218,7 @@ mod_rf &lt;- train(classe~., method = &quot;rf&quot;, data = trainSet, trControl
 pred_rf &lt;- predict(mod_rf, testSet)
 accuracy_rf &lt;- confusionMatrix(pred_rf, testSet$classe)$overall[1]
 paste(&quot;Accuracy of Random Forest : &quot;, accuracy_rf)</code></pre>
-<pre><code>## [1] &quot;Accuracy of Random Forest :  0.996771452846219&quot;</code></pre>
+<pre><code>## [1] &quot;Accuracy of Random Forest :  0.996941376380629&quot;</code></pre>
 <p>We see that we have a great accuracy. The computational time was about 4 minutes wich is a little long for a small dataset of 13 000 observations, but acceptable given the fact we do not need to scale it to a larger set.</p>
 <ol start="2" style="list-style-type: decimal">
 <li><strong>Random Forest with PCA</strong></li>
@@ -229,7 +229,7 @@ mod_rf_pca &lt;- train(classe~., method = &quot;rf&quot;, data = trainSet, prePr
 pred_rf_pca &lt;- predict(mod_rf_pca, testSet)
 accuracy_rf_pca &lt;- confusionMatrix(pred_rf_pca, testSet$classe)$overall[1]
 paste(&quot;Accuracy of Random Forest with PCA : &quot;, accuracy_rf_pca)</code></pre>
-<pre><code>## [1] &quot;Accuracy of Random Forest with PCA :  0.976550552251487&quot;</code></pre>
+<pre><code>## [1] &quot;Accuracy of Random Forest with PCA :  0.978589634664401&quot;</code></pre>
 <p>The accuracy is slightly reduced using PC and the execution time is nearly divided by 2. Thais could maybe be a more scalable solution.</p>
 <ol start="3" style="list-style-type: decimal">
 <li><strong>GBM Algorithm</strong></li>
@@ -240,7 +240,7 @@ mod_gbm &lt;- train(classe~., method = &quot;gbm&quot;, data = trainSet, trContr
 pred_gbm &lt;- predict(mod_gbm, testSet)
 accuracy_gbm &lt;- confusionMatrix(pred_gbm, testSet$classe)$overall[1]
 paste(&quot;Accuracy of GBM with: &quot;, accuracy_gbm)</code></pre>
-<pre><code>## [1] &quot;Accuracy of GBM with:  0.987085811384877&quot;</code></pre>
+<pre><code>## [1] &quot;Accuracy of GBM with:  0.981818181818182&quot;</code></pre>
 <p>The accuracy is nearly as high as the random forest model and the execution time is similar. We will prefer the random forest model.</p>
 <ol start="4" style="list-style-type: decimal">
 <li><strong>GBM Algorithm with PCA</strong></li>
@@ -250,19 +250,20 @@ mod_gbm_pca &lt;- train(classe~., method=&quot;gbm&quot;, data=trainSet, preProc
 pred_gbm_pca &lt;- predict(mod_gbm_pca, testSet)
 accuracy_gbm_pca &lt;- confusionMatrix(pred_gbm_pca, testSet$classe)$overall[1]
 paste(&quot;Accuracy of GBM with PCA: &quot;, accuracy_gbm_pca)</code></pre>
-<pre><code>## [1] &quot;Accuracy of GBM with PCA:  0.817162276975361&quot;</code></pre>
+<pre><code>## [1] &quot;Accuracy of GBM with PCA:  0.813423959218352&quot;</code></pre>
 <p>Again, the accuracy is greatly inferior the random forest model here with a not so much quicker solution.</p>
 <div id="conclusion" class="section level4">
 <h4><strong>Conclusion</strong></h4>
 <pre class="r"><code>paste(&quot;Accuracy of Random Forest : &quot;, accuracy_rf)</code></pre>
-<pre><code>## [1] &quot;Accuracy of Random Forest :  0.996771452846219&quot;</code></pre>
+<pre><code>## [1] &quot;Accuracy of Random Forest :  0.996941376380629&quot;</code></pre>
 <pre class="r"><code>paste(&quot;Accuracy of Random Forest with PCA : &quot;, accuracy_rf_pca)</code></pre>
-<pre><code>## [1] &quot;Accuracy of Random Forest with PCA :  0.976550552251487&quot;</code></pre>
+<pre><code>## [1] &quot;Accuracy of Random Forest with PCA :  0.978589634664401&quot;</code></pre>
 <pre class="r"><code>paste(&quot;Accuracy of GBM : &quot;, accuracy_gbm)</code></pre>
-<pre><code>## [1] &quot;Accuracy of GBM :  0.987085811384877&quot;</code></pre>
+<pre><code>## [1] &quot;Accuracy of GBM :  0.981818181818182&quot;</code></pre>
 <pre class="r"><code>paste(&quot;Accuracy of GBM with PCA: &quot;, accuracy_gbm_pca)</code></pre>
-<pre><code>## [1] &quot;Accuracy of GBM with PCA:  0.817162276975361&quot;</code></pre>
+<pre><code>## [1] &quot;Accuracy of GBM with PCA:  0.813423959218352&quot;</code></pre>
 <p>The best model for accuracy is the simple random forest one with 99.7% of accuracy on the test set. However, the execution time might forbid to use this algorithm on larger data sets. The Random Forest with PCA preprocessing appear as a more viable alternative for this case.</p>
+<p>Our out-of-sample error should be of 0.3%.</p>
 </div>
 </div>
 <div id="application-to-the-test-data" class="section level2">
